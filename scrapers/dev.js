@@ -10,7 +10,8 @@ const DEFAULT_OPTS = {
   minBedrooms: 1,
   maxBedrooms: 2,
   minPrice: 1500,
-  maxPrice: 3000
+  maxPrice: 3000,
+  extraField: 'extraValue'
 }
 const OUTPUT_RESPONSE_FILE = '/Users/mark/Downloads/apartmentsDotCom.json'
 

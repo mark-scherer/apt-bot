@@ -4,10 +4,14 @@
 */
 
 const utils = require('./utils')
+const scraperSchema = require('./schema')
 
 class Scraper {
   constructor(opts) {
-    this.opts = utils.validateInputs(opts)
+    const validationErrors = utils.validateIO([opts], scraperSchema.input)
+    if (validationErrors) throw Error(`${this.constructor.name} constructor: failed to validated input: ${validationErrors}`)
+    
+    this.opts = opts
   }
 
   // scrape new listing from main page

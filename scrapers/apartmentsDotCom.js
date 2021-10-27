@@ -14,6 +14,7 @@ const fs = require('fs')
 const _ = require('lodash')
 const cheerio = require('cheerio')
 const utils = require('./utils')
+const scraperSchema = require('./schema')
 const Scraper = require('./scraper')
 
 const BASE_URL = 'https://www.apartments.com'
@@ -58,11 +59,8 @@ class apartmentsDotCom extends Scraper {
       })
     })
 
-    try {
-      utils.validateListings(listings, 'info')
-    } catch (listingError) {
-      throw Error(`${this.constructor.name}.scrape: scraped invalid listings: ${listingError}`)
-    }
+    const listingInfoValidationErrors = utils.validateIO(listings, scraperSchema.listingInfo)
+    if (listingInfoValidationErrors) throw Error(`${this.constructor.name}.scrape: scraped ${listingInfoValidationErrors.length} invalid listings: ${listingInfoValidationErrors.join('\n')}`)
 
     return listings
   }

@@ -5,6 +5,7 @@
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 const utils = require('./utils')
+const scraperSchema = require('./schema')
 
 const SCRAPERS = {
   apartmentsDotCom: require('./apartmentsDotCom')
@@ -32,7 +33,7 @@ const TESTS = {
       caughtError = String(error)
     }
   
-    if (!caughtError.includes('validateInputs: missing required input:')) throw Error(`failed to catch missing input: ${JSON.stringify({ ommittedInputs, caughtError })}`)
+    if (!caughtError.includes('missing required field:')) throw Error(`failed to catch missing input: ${JSON.stringify({ ommittedInputs, caughtError })}`)
   },
 
   catchesExtraInput: async function(scraper) {
@@ -46,7 +47,24 @@ const TESTS = {
       caughtError = String(error)
     }
   
-    if (!caughtError.includes('validateInputs: unrecognized input:')) throw Error(`failed to catch extra input: ${JSON.stringify({ extraInputs, caughtError })}`)
+    if (!caughtError.includes('extra field:')) throw Error(`failed to catch extra input: ${JSON.stringify({ extraInputs, caughtError })}`)
+  },
+
+  catchesBadInputType: async function(scraper) {
+    const inputsToChange = _.filter(Object.keys(scraperSchema.input), fieldName => scraperSchema.input[fieldName].type !== 'string')
+    if (!inputsToChange.length) throw Error(`catchesBadInputType: did not find any inputs in schema to change... need to update test`)
+
+    const inputs = _.cloneDeep(TEST_INPUT)
+    _.forEach(inputsToChange, fieldName => inputs[fieldName] = String(inputs[fieldName]))
+
+    let caughtError = ''
+    try {
+      new scraper(inputs)
+    } catch (error) {
+      caughtError = String(error)
+    }
+  
+    if (!caughtError.includes('incorrect field type:')) throw Error(`failed to catch incorrect input type: ${JSON.stringify({ inputsToChange, inputs, caughtError })}`)
   },
 
   producesProperListingInfo: async function(scraper) {
@@ -54,7 +72,8 @@ const TESTS = {
     const listings = await _scraper.scrape()
     if (!listings) throw Error(`did not return listings array`)
     if (!listings.length) throw Error(`returned zero listings`)
-    utils.validateListings(listings, 'info')
+    const invalidListings = utils.validateIO(listings, scraperSchema.listingInfo)
+    if (invalidListings) throw Error(`returned invalid listings: ${invalidListings.join('\n')}`)
   }
 }
 
